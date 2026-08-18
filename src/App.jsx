@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { db, auth } from './firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { 
   User, Lock, Calendar, Users, FileText, Video, PenTool, ClipboardCheck, 
   Plus, Edit, Save, LogOut, FileUp, CheckCircle, ArrowLeft, LayoutDashboard,
@@ -75,10 +78,28 @@ const MOCK_EPISODE = {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'login' | 'editor'
-  const [episodes, setEpisodes] = useState([MOCK_EPISODE]);
+  const [episodes, setEpisodes] = useState([]);
   const [activeEpisodeId, setActiveEpisodeId] = useState(null);
   const [notification, setNotification] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+
+    const unsubscribeDb = onSnapshot(collection(db, 'episodes'), (snapshot) => {
+      const eps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setEpisodes(eps);
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeDb();
+    };
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -95,22 +116,30 @@ export default function App() {
     }, 4000);
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e, email, password) => {
     e.preventDefault();
-    setIsLoggedIn(true);
-    setCurrentView('home');
-    showNotification("Berhasil masuk sebagai Admin!");
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      setCurrentView('home');
+      showNotification("Berhasil masuk sebagai Admin!");
+    } catch (error) {
+      showNotification("Gagal login: Periksa email & password", "danger");
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentView('home');
-    showNotification("Berhasil keluar dari sesi Admin.");
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setCurrentView('home');
+      showNotification("Berhasil keluar dari sesi Admin.");
+    } catch (error) {
+      showNotification("Gagal logout", "danger");
+    }
   };
 
-  const createNewEpisode = () => {
+  const createNewEpisode = async () => {
     const newEp = {
-      id: Date.now(),
+      id: Date.now().toString(),
       tanggalRapat: '',
       tema: '',
       judul: '',
@@ -127,10 +156,15 @@ export default function App() {
       publikasi: null,
       sertifikat: null
     };
-    setEpisodes([newEp, ...episodes]);
-    setActiveEpisodeId(newEp.id);
-    setCurrentView('editor');
-    showNotification("Episode webinar baru berhasil dibuat.");
+    try {
+      await setDoc(doc(db, 'episodes', newEp.id), newEp);
+      setActiveEpisodeId(newEp.id);
+      setCurrentView('editor');
+      showNotification("Episode webinar baru berhasil dibuat.");
+    } catch (error) {
+      console.error(error);
+      showNotification("Gagal membuat episode baru", "danger");
+    }
   };
 
   const openEpisode = (id) => {
@@ -138,20 +172,24 @@ export default function App() {
     setCurrentView('editor');
   };
 
-  const deleteEpisode = (id) => {
-    setEpisodes(episodes.filter(ep => ep.id !== id));
-    showNotification("Data episode webinar berhasil dihapus.", "danger");
+  const deleteEpisode = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'episodes', id.toString()));
+      showNotification("Data episode webinar berhasil dihapus.", "danger");
+    } catch (error) {
+      console.error(error);
+      showNotification("Gagal menghapus data", "danger");
+    }
   };
 
-  const saveEpisodeData = (id, updatedData, successMessage = "Data persiapan berhasil disimpan!") => {
-    // Simulasi Backend
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setEpisodes(episodes.map(ep => ep.id === id ? { ...ep, ...updatedData } : ep));
-        showNotification(successMessage);
-        resolve();
-      }, 1000); // 1 detik loading simulasi backend
-    });
+  const saveEpisodeData = async (id, updatedData, successMessage = "Data persiapan berhasil disimpan!") => {
+    try {
+      await setDoc(doc(db, 'episodes', id.toString()), updatedData, { merge: true });
+      showNotification(successMessage);
+    } catch (error) {
+      console.error(error);
+      showNotification("Gagal menyimpan data", "danger");
+    }
   };
 
   return (
@@ -214,30 +252,39 @@ export default function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        {currentView === 'home' && (
-          <Dashboard 
-            episodes={episodes} 
-            isLoggedIn={isLoggedIn}
-            onCreate={createNewEpisode} 
-            onOpen={openEpisode}
-            onDelete={deleteEpisode}
-          />
-        )}
-        
-        {currentView === 'login' && (
-          <LoginScreen 
-            onLogin={handleLogin} 
-            onBack={() => setCurrentView('home')} 
-          />
-        )}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mb-4" />
+            <p className="text-slate-500 font-medium">Memuat data dari server...</p>
+          </div>
+        ) : (
+          <>
+            {currentView === 'home' && (
+              <Dashboard 
+                episodes={episodes} 
+                isLoggedIn={isLoggedIn}
+                onCreate={createNewEpisode} 
+                onOpen={openEpisode}
+                onDelete={deleteEpisode}
+              />
+            )}
+            
+            {currentView === 'login' && (
+              <LoginScreen 
+                onLogin={handleLogin} 
+                onBack={() => setCurrentView('home')} 
+              />
+            )}
 
-        {currentView === 'editor' && (
-          <EpisodeEditor 
-            episode={episodes.find(ep => ep.id === activeEpisodeId)} 
-            isLoggedIn={isLoggedIn}
-            onBack={() => setCurrentView('home')}
-            onSave={(data, msg) => saveEpisodeData(activeEpisodeId, data, msg)}
-          />
+            {currentView === 'editor' && (
+              <EpisodeEditor 
+                episode={episodes.find(ep => ep.id === activeEpisodeId)} 
+                isLoggedIn={isLoggedIn}
+                onBack={() => setCurrentView('home')}
+                onSave={(data, msg) => saveEpisodeData(activeEpisodeId, data, msg)}
+              />
+            )}
+          </>
         )}
       </main>
     </div>
@@ -246,6 +293,9 @@ export default function App() {
 
 // --- LOGIN SCREEN ---
 function LoginScreen({ onLogin, onBack }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   return (
     <div className="flex items-center justify-center pt-10 pb-20 animate-slide-up">
       <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-100 dark:border-slate-700 transition-colors">
@@ -261,14 +311,14 @@ function LoginScreen({ onLogin, onBack }) {
         
         <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-8">Login Admin</h2>
         
-        <form onSubmit={onLogin} className="space-y-6">
+        <form onSubmit={(e) => onLogin(e, email, password)} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Username</label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Email</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-slate-400" />
               </div>
-              <input type="text" required defaultValue="admin" className="pl-11 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all dark:text-white" placeholder="Masukkan username" />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="pl-11 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all dark:text-white" placeholder="admin@bpi.com" />
             </div>
           </div>
           <div>
@@ -277,7 +327,7 @@ function LoginScreen({ onLogin, onBack }) {
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-slate-400" />
               </div>
-              <input type="password" required defaultValue="admin" className="pl-11 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all dark:text-white" placeholder="Masukkan password" />
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="pl-11 w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all dark:text-white" placeholder="Masukkan password" />
             </div>
           </div>
           <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm px-5 py-3.5 text-center transition-all shadow-md hover:shadow-lg active:scale-[0.98]">
