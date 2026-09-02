@@ -452,6 +452,7 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
   const [usulan, setUsulan] = useState(episode.usulan || []);
   const [hasilRapatInputted, setHasilRapatInputted] = useState(episode.hasilRapatInputted || false);
   const [activeTab, setActiveTab] = useState(1);
+  const [isEditingJudul, setIsEditingJudul] = useState(false);
 
   const [narasumber, setNarasumber] = useState(episode.narasumber || []);
   
@@ -626,6 +627,7 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
                       } else {
                         setBasicInfo({ ...basicInfo, judul: '', tema: '' });
                       }
+                      setIsEditingJudul(false);
                     }}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer"
                   >
@@ -636,10 +638,49 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
                       </option>
                     ))}
                   </select>
-                  {basicInfo.judul && (
-                    <div className="mt-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                  {basicInfo.judul && !isEditingJudul && (
+                    <div className="mt-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-100 dark:border-indigo-800 relative group">
                       <p className="text-sm text-indigo-900 dark:text-indigo-300"><span className="font-bold">Judul Terpilih:</span> {basicInfo.judul}</p>
                       <p className="text-sm text-indigo-900 dark:text-indigo-300 mt-1"><span className="font-bold">Tema Terpilih:</span> {basicInfo.tema}</p>
+                      <button 
+                        onClick={() => setIsEditingJudul(true)}
+                        className="absolute top-4 right-4 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 bg-white dark:bg-slate-800 p-1.5 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-700 transition-all opacity-0 group-hover:opacity-100"
+                        title="Edit Judul & Tema"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  {isEditingJudul && (
+                    <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Edit Judul Final</label>
+                        <input 
+                          type="text" 
+                          value={basicInfo.judul}
+                          onChange={e => setBasicInfo({ ...basicInfo, judul: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                          placeholder="Masukkan judul final..." 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Edit Tema Final</label>
+                        <input 
+                          type="text" 
+                          value={basicInfo.tema}
+                          onChange={e => setBasicInfo({ ...basicInfo, tema: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                          placeholder="Masukkan tema final..." 
+                        />
+                      </div>
+                      <div className="flex justify-end">
+                         <button 
+                          onClick={() => setIsEditingJudul(false)}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                          Selesai Edit
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -705,56 +746,199 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
               </button>
             </div>
             
-            {narasumber.length === 0 ? (
+            {usulan.length === 0 ? (
               <div className="text-center p-10 bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
                 <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-500 dark:text-slate-400 font-medium">Belum ada narasumber yang ditambahkan.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Belum ada usulan judul. Silakan tambahkan di tab Informasi Dasar terlebih dahulu.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {narasumber.map((narsum, index) => (
-                  <div key={narsum.id} className="flex gap-5 items-start bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 relative group transition-all hover:border-indigo-200 dark:hover:border-indigo-800">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap & Gelar</label>
-                        <input 
-                          type="text" 
-                          value={narsum.nama}
-                          onChange={(e) => {
-                            const newNarsum = [...narasumber];
-                            newNarsum[index].nama = e.target.value;
-                            setNarasumber(newNarsum);
-                          }}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition-all" 
-                          placeholder="Contoh: Dr. Budi Santoso, M.Pd" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Asal Instansi</label>
-                        <input 
-                          type="text" 
-                          value={narsum.instansi}
-                          onChange={(e) => {
-                            const newNarsum = [...narasumber];
-                            newNarsum[index].instansi = e.target.value;
-                            setNarasumber(newNarsum);
-                          }}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm transition-all" 
-                          placeholder="Contoh: Universitas Indonesia" 
-                        />
-                      </div>
+              usulan.map((u, uIndex) => (
+                <div key={u.id} className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Narasumber untuk Usulan {uIndex + 1}</h4>
+                      <p className="text-lg text-indigo-700 dark:text-indigo-400 font-bold">{u.judul || '(Judul Kosong)'}</p>
                     </div>
                     <button 
-                      onClick={() => setNarasumber(narasumber.filter(n => n.id !== narsum.id))}
-                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors mt-6 shadow-sm border border-transparent hover:border-red-100 dark:hover:border-red-800/50"
-                      title="Hapus Narasumber"
+                      onClick={() => setNarasumber([...narasumber, { id: Date.now(), usulanId: u.id, nama: '', instansi: '' }])}
+                      className="flex items-center bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-200 dark:hover:bg-indigo-800 px-3 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Plus className="w-3 h-3 mr-1.5" /> Tambah Narsum
                     </button>
                   </div>
-                ))}
+                  
+                  {narasumber.filter(n => n.usulanId === u.id).length === 0 ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 italic bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">Belum ada narasumber untuk usulan judul ini.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {narasumber.map((narsum, index) => {
+                        if (narsum.usulanId !== u.id) return null;
+                        return (
+                          <div key={narsum.id} className="flex gap-4 items-start bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 relative group transition-all hover:border-indigo-200 dark:hover:border-indigo-800">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nama & Gelar</label>
+                                <input 
+                                  type="text" 
+                                  value={narsum.nama}
+                                  onChange={(e) => {
+                                    const newNarsum = [...narasumber];
+                                    newNarsum[index].nama = e.target.value;
+                                    setNarasumber(newNarsum);
+                                  }}
+                                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+                                  placeholder="Contoh: Dr. Budi Santoso" 
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Instansi</label>
+                                <input 
+                                  type="text" 
+                                  value={narsum.instansi}
+                                  onChange={(e) => {
+                                    const newNarsum = [...narasumber];
+                                    newNarsum[index].instansi = e.target.value;
+                                    setNarasumber(newNarsum);
+                                  }}
+                                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+                                  placeholder="Contoh: Univ. Indonesia" 
+                                />
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => setNarasumber(narasumber.filter(n => n.id !== narsum.id))}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors mt-6"
+                              title="Hapus Narasumber"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+
+            {narasumber.filter(n => !n.usulanId).length > 0 && (
+              <div className="bg-slate-50 dark:bg-slate-800/30 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Narasumber Umum / Lama</h4>
+                <div className="space-y-3">
+                  {narasumber.map((narsum, index) => {
+                    if (narsum.usulanId) return null;
+                    return (
+                      <div key={narsum.id} className="flex gap-4 items-start bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 relative group transition-all hover:border-indigo-200 dark:hover:border-indigo-800">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nama & Gelar</label>
+                            <input 
+                              type="text" 
+                              value={narsum.nama}
+                              onChange={(e) => {
+                                const newNarsum = [...narasumber];
+                                newNarsum[index].nama = e.target.value;
+                                setNarasumber(newNarsum);
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Instansi</label>
+                            <input 
+                              type="text" 
+                              value={narsum.instansi}
+                              onChange={(e) => {
+                                const newNarsum = [...narasumber];
+                                newNarsum[index].instansi = e.target.value;
+                                setNarasumber(newNarsum);
+                              }}
+                              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none text-sm" 
+                            />
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setNarasumber(narasumber.filter(n => n.id !== narsum.id))}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors mt-6"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
+
+            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-700 space-y-4">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Penetapan Judul Final</h3>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Pilih Judul & Tema Pelaksanaan</label>
+              <select 
+                value={usulan.find(u => u.judul === basicInfo.judul)?.id || ''}
+                onChange={e => {
+                  const selected = usulan.find(u => u.id.toString() === e.target.value);
+                  if (selected) {
+                    setBasicInfo({ ...basicInfo, judul: selected.judul, tema: selected.tema });
+                  } else {
+                    setBasicInfo({ ...basicInfo, judul: '', tema: '' });
+                  }
+                  setIsEditingJudul(false);
+                }}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+              >
+                <option value="">-- Pilih Judul & Tema yang Disetujui --</option>
+                {usulan.map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.judul} (Tema: {item.tema})
+                  </option>
+                ))}
+              </select>
+              {basicInfo.judul && !isEditingJudul && (
+                <div className="mt-3 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-100 dark:border-indigo-800 relative group">
+                  <p className="text-sm text-indigo-900 dark:text-indigo-300"><span className="font-bold">Judul Terpilih:</span> {basicInfo.judul}</p>
+                  <p className="text-sm text-indigo-900 dark:text-indigo-300 mt-1"><span className="font-bold">Tema Terpilih:</span> {basicInfo.tema}</p>
+                  <button 
+                    onClick={() => setIsEditingJudul(true)}
+                    className="absolute top-4 right-4 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 bg-white dark:bg-slate-800 p-1.5 rounded-lg shadow-sm border border-indigo-200 dark:border-indigo-700 transition-all opacity-0 group-hover:opacity-100"
+                    title="Edit Judul & Tema"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              {isEditingJudul && (
+                <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Edit Judul Final</label>
+                    <input 
+                      type="text" 
+                      value={basicInfo.judul}
+                      onChange={e => setBasicInfo({ ...basicInfo, judul: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                      placeholder="Masukkan judul final..." 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Edit Tema Final</label>
+                    <input 
+                      type="text" 
+                      value={basicInfo.tema}
+                      onChange={e => setBasicInfo({ ...basicInfo, tema: e.target.value })}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none" 
+                      placeholder="Masukkan tema final..." 
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                     <button 
+                      onClick={() => setIsEditingJudul(false)}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      Selesai Edit
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
