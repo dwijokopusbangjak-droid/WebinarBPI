@@ -346,69 +346,121 @@ function Dashboard({ episodes, isLoggedIn, onCreate, onOpen, onDelete }) {
   return (
     <div className="animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center">
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center print:hidden">
           <LayoutDashboard className="mr-3 text-indigo-600 dark:text-indigo-400" /> Dashboard Webinar
         </h1>
-        {isLoggedIn && (
-          <button onClick={onCreate} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-md hover:shadow-lg transition-all active:scale-95">
-            <Plus className="w-5 h-5 mr-2" /> Tambah Episode
+        <div className="flex space-x-3 print:hidden">
+          <button onClick={() => window.print()} className="flex items-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-5 py-2.5 rounded-xl font-medium shadow-sm transition-all active:scale-95">
+            <Printer className="w-5 h-5 mr-2" /> Cetak Rekap Usulan
           </button>
-        )}
-      </div>
-
-      {episodes.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-16 text-center transition-colors">
-          <Video className="w-20 h-20 text-slate-200 dark:text-slate-700 mx-auto mb-6" />
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Belum ada episode</h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">Data kegiatan webinar belum tersedia saat ini. Mulai dengan membuat jadwal baru.</p>
           {isLoggedIn && (
-            <button onClick={onCreate} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg">
-              Tambah Episode Sekarang
+            <button onClick={onCreate} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-md hover:shadow-lg transition-all active:scale-95">
+              <Plus className="w-5 h-5 mr-2" /> Tambah Episode
             </button>
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {episodes.map(ep => (
-            <div 
-              key={ep.id} 
-              onClick={() => onOpen(ep.id)}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-500 transition-all cursor-pointer group relative transform hover:-translate-y-1"
-            >
-              <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
-                    {ep.tanggalWebinar ? ep.tanggalWebinar : 'Tanggal TBD'}
-                  </span>
-                  
-                  {isLoggedIn && (
-                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setEpisodeToDelete(ep.id); }} 
-                        className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-slate-700 p-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600 transition-all"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
-                  {ep.judul || '(Belum ada judul)'}
-                </h3>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2 line-clamp-1">{ep.tema || 'Tema belum ditentukan'}</p>
-              </div>
-              <div className="p-5 bg-white dark:bg-slate-800 flex justify-between items-center text-sm font-medium text-slate-600 dark:text-slate-400">
-                <span className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-slate-400 dark:text-slate-500" /> Rapat: {ep.tanggalRapat || '-'}</span>
-                {ep.hasilRapatInputted ? 
-                  <span className="flex items-center text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md"><CheckCircle className="w-4 h-4 mr-1.5" /> Terjadwal</span> : 
-                  <span className="flex items-center text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md">Persiapan</span>
-                }
-              </div>
+      </div>
+      
+      {/* GLOBAL PRINT VIEW FOR USULAN */}
+      <div className="hidden print:block mb-8">
+        <h2 className="text-2xl font-bold text-center uppercase tracking-wider border-b-2 border-black pb-4 mb-6">Rekapitulasi Seluruh Usulan Judul Webinar</h2>
+        {episodes.map((ep, i) => {
+          if (!ep.usulan || ep.usulan.length === 0) return null;
+          return (
+            <div key={ep.id} className="mb-6 break-inside-avoid border border-black p-4 rounded">
+              <h3 className="font-bold text-lg mb-2">Episode {i + 1}: {ep.judul || '(Belum Ada Judul Final)'}</h3>
+              <p className="text-sm mb-3">Tanggal Pelaksanaan: {ep.tanggalWebinar || 'TBD'} | Tanggal Rapat: {ep.tanggalRapat || 'TBD'}</p>
+              <table className="w-full text-sm border-collapse border border-black">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border border-black p-2 w-12 text-center">No</th>
+                    <th className="border border-black p-2">Usulan Judul</th>
+                    <th className="border border-black p-2">Tema</th>
+                    <th className="border border-black p-2">Narasumber</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ep.usulan.map((u, index) => {
+                    const narsums = (ep.narasumber || []).filter(n => n.usulanId === u.id);
+                    return (
+                      <tr key={u.id}>
+                        <td className="border border-black p-2 text-center">{index + 1}</td>
+                        <td className="border border-black p-2 font-medium">{u.judul}</td>
+                        <td className="border border-black p-2">{u.tema}</td>
+                        <td className="border border-black p-2">
+                          {narsums.length > 0 ? (
+                            <ul className="list-disc pl-4">
+                              {narsums.map(n => <li key={n.id}>{n.nama} ({n.instansi})</li>)}
+                            </ul>
+                          ) : (
+                            <span className="italic text-gray-500">Kosong</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
+
+      <div className="print:hidden">
+        {episodes.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-16 text-center transition-colors">
+            <Video className="w-20 h-20 text-slate-200 dark:text-slate-700 mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Belum ada episode</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">Data kegiatan webinar belum tersedia saat ini. Mulai dengan membuat jadwal baru.</p>
+            {isLoggedIn && (
+              <button onClick={onCreate} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg">
+                Tambah Episode Sekarang
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {episodes.map(ep => (
+              <div 
+                key={ep.id} 
+                onClick={() => onOpen(ep.id)}
+                className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-500 transition-all cursor-pointer group relative transform hover:-translate-y-1"
+              >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/50">
+                      {ep.tanggalWebinar ? ep.tanggalWebinar : 'Tanggal TBD'}
+                    </span>
+                    
+                    {isLoggedIn && (
+                      <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setEpisodeToDelete(ep.id); }} 
+                          className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-slate-700 p-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600 transition-all"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
+                    {ep.judul || '(Belum ada judul)'}
+                  </h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2 line-clamp-1">{ep.tema || 'Tema belum ditentukan'}</p>
+                </div>
+                <div className="p-5 bg-white dark:bg-slate-800 flex justify-between items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center"><Calendar className="w-4 h-4 mr-2 text-slate-400 dark:text-slate-500" /> Rapat: {ep.tanggalRapat || '-'}</span>
+                  {ep.hasilRapatInputted ? 
+                    <span className="flex items-center text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-md"><CheckCircle className="w-4 h-4 mr-1.5" /> Terjadwal</span> : 
+                    <span className="flex items-center text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md">Persiapan</span>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {episodeToDelete && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-fade-in">
