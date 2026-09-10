@@ -1638,6 +1638,7 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
 
             </div>
           </div>
+        )}
         {/* TAB 8: CETAK USULAN JUDUL */}
         {activeTab === 8 && (
           <div className="space-y-6 animate-fade-in print:block">
