@@ -489,7 +489,8 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
     { id: 4, label: 'Teknis & Multimedia', icon: <Video className="w-4 h-4 mr-2" /> },
     { id: 5, label: 'Desain, Publikasi & Lainnya', icon: <Award className="w-4 h-4 mr-2" /> },
     { id: 6, label: 'Asrot', icon: <Presentation className="w-4 h-4 mr-2" /> },
-    { id: 7, label: 'Cetak Laporan', icon: <Printer className="w-4 h-4 mr-2" /> }
+    { id: 7, label: 'Cetak Laporan', icon: <Printer className="w-4 h-4 mr-2" /> },
+    { id: 8, label: 'Cetak Usulan Judul', icon: <Printer className="w-4 h-4 mr-2" /> }
   ];
 
   const handleSave = async () => {
@@ -1583,6 +1584,71 @@ function EpisodeEditor({ episode, isLoggedIn, onBack, onSave }) {
                 </div>
               </div>
 
+            </div>
+          </div>
+        {/* TAB 8: CETAK USULAN JUDUL */}
+        {activeTab === 8 && (
+          <div className="space-y-6 animate-fade-in print:block">
+            <div className="flex justify-between items-center print:hidden bg-indigo-50 dark:bg-indigo-900/30 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+              <div>
+                <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-300">Cetak Usulan Judul & Narasumber</h3>
+                <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-1">Unduh rekap usulan judul dan narasumber yang telah diinput.</p>
+              </div>
+              <button 
+                onClick={() => window.print()} 
+                className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-md active:scale-95"
+              >
+                <Printer className="w-5 h-5 mr-2" /> Print Data
+              </button>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm print:shadow-none print:border-none print:bg-white print:text-black">
+              <div className="text-center mb-8 border-b-2 border-slate-800 dark:border-slate-500 pb-4 print:border-black">
+                <h2 className="text-2xl font-bold uppercase tracking-wider print:text-black">Rekap Usulan Judul & Narasumber</h2>
+                <h3 className="text-xl font-semibold mt-1 print:text-black">Episode: {basicInfo.judul || 'Belum Ada Judul Final'}</h3>
+              </div>
+
+              {usulan.length === 0 ? (
+                <p className="text-center italic text-gray-500">Belum ada data usulan judul.</p>
+              ) : (
+                <div className="space-y-8">
+                  {usulan.map((u, uIndex) => {
+                    const narsums = narasumber.filter(n => n.usulanId === u.id);
+                    return (
+                      <div key={u.id} className="border border-slate-200 dark:border-slate-700 print:border-black p-5 rounded-xl">
+                        <div className="mb-4 pb-2 border-b border-slate-100 dark:border-slate-700 print:border-gray-300">
+                          <h4 className="font-bold text-lg text-slate-800 dark:text-white print:text-black">Usulan {uIndex + 1}: {u.judul || '(Judul Kosong)'}</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 print:text-gray-700 mt-1"><span className="font-semibold">Tema:</span> {u.tema || '-'}</p>
+                        </div>
+                        
+                        <h5 className="font-semibold text-sm text-slate-700 dark:text-slate-300 print:text-black mb-3">Daftar Narasumber:</h5>
+                        {narsums.length === 0 ? (
+                          <p className="text-sm text-slate-500 italic print:text-gray-500">Belum ada narasumber untuk usulan ini.</p>
+                        ) : (
+                          <table className="w-full text-sm text-left border-collapse border border-slate-200 dark:border-slate-600 print:border-black">
+                            <thead className="bg-slate-50 dark:bg-slate-700/50 print:bg-gray-100">
+                              <tr>
+                                <th className="border border-slate-300 dark:border-slate-600 print:border-black p-2 w-12 text-center">No</th>
+                                <th className="border border-slate-300 dark:border-slate-600 print:border-black p-2">Nama & Gelar</th>
+                                <th className="border border-slate-300 dark:border-slate-600 print:border-black p-2">Asal Instansi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {narsums.map((n, i) => (
+                                <tr key={n.id}>
+                                  <td className="border border-slate-300 dark:border-slate-600 print:border-black p-2 text-center">{i + 1}</td>
+                                  <td className="border border-slate-300 dark:border-slate-600 print:border-black p-2">{n.nama || '-'}</td>
+                                  <td className="border border-slate-300 dark:border-slate-600 print:border-black p-2">{n.instansi || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
